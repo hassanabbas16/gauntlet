@@ -10,7 +10,7 @@ Gauntlet is an open-source testing platform for voice AI agents. It generates sy
 
 ```bash
 pnpm install
-cp .env.example .env.local   # fill in DATABASE_URL, DATABASE_URL_DIRECT, AUTH_SECRET, GROQ_API_KEY
+cp .env.example .env.local   # fill in the two Supabase URLs and GROQ_API_KEY; generate AUTH_SECRET
 git config core.hooksPath .githooks
 pnpm db:push
 pnpm seed

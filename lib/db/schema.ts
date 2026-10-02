@@ -22,6 +22,8 @@ export const endReasonEnum = pgEnum("end_reason", [
 export const verdictEnum = pgEnum("verdict", ["pass", "fail"]);
 export const turnRoleEnum = pgEnum("turn_role", ["caller", "agent"]);
 
+// RLS is enabled on every table with no policies: Supabase exposes the public schema through its
+// Data API, and this locks that out. The app connects as the postgres role, which bypasses RLS.
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
 export const users = pgTable("users", {
@@ -31,7 +33,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   isDemo: boolean("is_demo").notNull().default(false),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const agents = pgTable("agents", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -45,7 +47,7 @@ export const agents = pgTable("agents", {
   temperature: real("temperature").notNull().default(0.3),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const suites = pgTable("suites", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -55,7 +57,7 @@ export const suites = pgTable("suites", {
   name: text("name").notNull(),
   scenario: text("scenario").notNull(),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const rubricItems = pgTable("rubric_items", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -69,7 +71,7 @@ export const rubricItems = pgTable("rubric_items", {
   codeCheck: text("code_check"),
   order: integer("order").notNull().default(0),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const personas = pgTable("personas", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -81,7 +83,7 @@ export const personas = pgTable("personas", {
   data: jsonb("data").notNull(),
   noiseLevel: real("noise_level").notNull().default(0),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export type AgentSnapshot = {
   name: string;
@@ -106,7 +108,7 @@ export const runs = pgTable("runs", {
   seed: integer("seed").notNull(),
   createdAt: createdAt(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 export const conversations = pgTable("conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -125,7 +127,7 @@ export const conversations = pgTable("conversations", {
   createdAt: createdAt(),
   startedAt: timestamp("started_at", { withTimezone: true }),
   completedAt: timestamp("completed_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 export const turns = pgTable("turns", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -137,7 +139,7 @@ export const turns = pgTable("turns", {
   rawText: text("raw_text").notNull(),
   heardText: text("heard_text"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const scores = pgTable("scores", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -152,7 +154,7 @@ export const scores = pgTable("scores", {
   turnIndex: integer("turn_index"),
   source: rubricKindEnum("source").notNull(),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export type User = typeof users.$inferSelect;
 export type Agent = typeof agents.$inferSelect;

@@ -1,6 +1,6 @@
 import "./env";
 import bcrypt from "bcryptjs";
-import { db, schema } from "@/lib/db";
+import { closeDb, db, schema } from "@/lib/db";
 
 async function seedDemoUser() {
   const email = (process.env.DEMO_EMAIL ?? "demo@gauntlet.ai").toLowerCase();
@@ -22,6 +22,7 @@ async function seedDemoUser() {
 
 async function main() {
   await seedDemoUser();
+  await closeDb();
 }
 
 main().catch((err) => {

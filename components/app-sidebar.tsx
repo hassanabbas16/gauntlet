@@ -9,12 +9,14 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { GauntletMark } from "@/components/dot-matrix";
 import { UserMenu } from "@/components/user-menu";
 
 const nav = [
@@ -31,18 +33,20 @@ export function AppSidebar({ user }: { user: { name?: string | null; email?: str
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <Link
-          href="/dashboard"
-          className="flex h-8 items-center gap-2 px-2 font-mono text-sm font-semibold tracking-tight"
-        >
-          <span className="flex size-5 shrink-0 items-center justify-center rounded bg-sidebar-primary text-[10px] text-sidebar-primary-foreground">
-            G
-          </span>
-          <span className="group-data-[collapsible=icon]:hidden">gauntlet</span>
-        </Link>
+        <SidebarMenu>
+          <SidebarMenuItem className="py-2">
+            <SidebarMenuButton asChild className="text-primary hover:text-brand">
+              <Link href="/dashboard" onClick={() => setOpenMobile(false)}>
+                <GauntletMark className="text-brand" />
+                <span className="font-dot text-xl font-black tracking-wide">gauntlet</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
+          <SidebarGroupLabel className="label-mono">Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {nav.map((item) => (
@@ -51,6 +55,7 @@ export function AppSidebar({ user }: { user: { name?: string | null; email?: str
                     asChild
                     tooltip={item.label}
                     isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+                    className="text-[13px] data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
                   >
                     <Link href={item.href} onClick={() => setOpenMobile(false)}>
                       <item.icon />

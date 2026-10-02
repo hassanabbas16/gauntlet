@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = { title: "Agents" };
@@ -6,10 +7,8 @@ export const metadata: Metadata = { title: "Agents" };
 export default function AgentsPage() {
   return (
     <>
-      <PageHeader title="Agents" description="Voice agents under test." />
-      <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed p-12 text-sm text-muted-foreground">
-        Nothing here yet.
-      </div>
+      <PageHeader eyebrow="agents" title="Agents" description="Voice agents under test." />
+      <EmptyState title="No agents yet." />
     </>
   );
 }
