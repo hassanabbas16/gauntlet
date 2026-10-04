@@ -1,8 +1,8 @@
-// Runs one demo persona against the v1 demo agent and prints the transcript + judge output.
-// Usage: pnpm tsx scripts/try-one.ts [personaIndex 0-7] [seed]
+// Runs one demo persona against a demo agent (v1 by default) and prints the transcript + judge output.
+// Usage: pnpm tsx scripts/try-one.ts [personaIndex 0-7] [seed] [v1|v2]
 import "./env";
 import { config } from "@/lib/config";
-import { DEMO_AGENT_V1, DEMO_PERSONAS, DEMO_RUBRIC, DEMO_SCENARIO } from "@/lib/demo/data";
+import { DEMO_AGENT_V1, DEMO_AGENT_V2, DEMO_PERSONAS, DEMO_RUBRIC, DEMO_SCENARIO } from "@/lib/demo/data";
 import { judgeConversation } from "@/lib/judge";
 import { createRng, hashSeed } from "@/lib/rng";
 import { runConversation } from "@/lib/sim/loop";
@@ -12,9 +12,10 @@ async function main() {
   const personaIndex = Number(process.argv[2] ?? 3);
   const seed = Number(process.argv[3] ?? 42);
   const persona = DEMO_PERSONAS[personaIndex] ?? DEMO_PERSONAS[3];
+  const prompt = process.argv[4] === "v2" ? DEMO_AGENT_V2 : DEMO_AGENT_V1;
   const agent = {
-    name: DEMO_AGENT_V1.name,
-    systemPrompt: DEMO_AGENT_V1.systemPrompt,
+    name: prompt.name,
+    systemPrompt: prompt.systemPrompt,
     model: config.models.agentDefault,
     temperature: 0.3,
   };
