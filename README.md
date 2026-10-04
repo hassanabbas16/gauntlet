@@ -1,19 +1,139 @@
-# Gauntlet
+<div align="center">
 
-**Break your voice agent before your customers do.**
+<img src="docs/banner.png" alt="Gauntlet: break your voice agent before your customers do" width="100%" />
 
-Gauntlet is an open-source testing platform for voice AI agents: clinic receptionists, support lines, sales callers. Instead of calling your agent by hand, you give Gauntlet the agent's system prompt and a test suite, and it:
+<br />
+<br />
 
-1. **Generates synthetic callers** from your scenario: a confused 81-year-old who gives the wrong birthday, an angry parent who demands a human, a social engineer asking for someone else's records, a mumbler on a bad line.
-2. **Simulates each phone call** against your agent, **injecting realistic speech-to-text noise** into what the agent "hears".
-3. **Scores every call** with a hybrid judge: deterministic code checks plus LLM rubric checks, each with a quoted line and a link to the turn.
-4. **Shows the results** in a dashboard: pass rates, failures by rubric item, full transcripts, and a **"caller said vs. agent heard"** diff.
+**Open-source testing for voice AI agents.**<br />
+Synthetic callers · realistic speech-to-text noise · a rubric judge that quotes its evidence.
 
-> **The insight it's built on:** in a voice pipeline the agent never hears audio. It reads the speech-to-text transcript. So most real-world voice failures (misheard dates of birth, "fifteen" becoming "fifty", cut-off sentences) can be reproduced in text by corrupting the transcript. The MVP is entirely text-based; real audio is on the roadmap.
+<br />
 
-**Live demo:** sign in with `demo@gauntlet.ai` / `demo1234`. The demo account has a clinic receptionist agent in two versions (v1 and v2), an "Appointment management" suite with 8 callers, and real runs showing the v2 prompt fixing what v1 got wrong.
+[![Live demo](https://img.shields.io/badge/live_demo-gauntlet--blush.vercel.app-55c8e6?style=for-the-badge&labelColor=141211)](https://gauntlet-blush.vercel.app)
+&nbsp;
+[![Demo login](https://img.shields.io/badge/login-demo%40gauntlet.ai_%2F_demo1234-2a2725?style=for-the-badge&labelColor=141211)](https://gauntlet-blush.vercel.app/login)
 
-## Architecture
+![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind_4-0f172a?logo=tailwindcss&logoColor=38bdf8)
+![Postgres](https://img.shields.io/badge/Supabase_Postgres-1c1c1c?logo=supabase&logoColor=3ecf8e)
+![Models](https://img.shields.io/badge/models-open--weight_(Qwen,_GPT--OSS)-9768ec)
+![Vercel](https://img.shields.io/badge/deployed_on-Vercel-000?logo=vercel&logoColor=white)
+
+[What it does](#what-it-does) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Run it locally](#run-it-locally) · [Roadmap](#roadmap)
+
+</div>
+
+---
+
+## The problem
+
+Teams building phone agents (clinic receptionists, support lines, sales callers) mostly test them by **calling them by hand**. That doesn't scale, it misses the callers that actually break agents, and it never tests the thing that goes wrong most in production: **the agent mishearing the caller.**
+
+## The insight
+
+> In a voice pipeline the agent never hears audio. **It reads a speech-to-text transcript.**
+
+So most real-world voice failures can be reproduced in text by corrupting that transcript:
+- a misheard date of birth
+- "fifteen" becoming "fifty"
+- "Tuesday" becoming "two's day"
+- a sentence cut off halfway
+
+Gauntlet does exactly that, at scale, and grades what happens next.
+
+## What it does
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 🎭 Adversarial personas
+
+Generated from your scenario, for example:
+- an 81-year-old who gives the wrong birth year
+- a parent who demands a human twice
+- a "husband" asking for someone else's records
+- a mumbler calling from a truck
+
+Every suite always includes a happy path, a hostile caller, a heavy-noise caller, an adversarial caller and a confused one.
+
+</td>
+<td width="33%" valign="top">
+
+### 📞 Realistic STT noise
+
+Your agent hears what speech-to-text would give it:
+- dropped words
+- number confusions (14 ↔ 40, fifteen ↔ fifty)
+- ~60 homophones (*Patel → pastel*)
+- cut-offs and `[inaudible]` spans
+- lost punctuation
+
+It's **seeded and deterministic**, so every run is reproducible.
+
+</td>
+<td width="33%" valign="top">
+
+### ⚖️ Evidence-based judging
+
+Deterministic **code checks** plus an **LLM rubric judge** from a different model family than your agent.
+
+Every yes/no check comes with a quoted line and a **jump-to-turn** link. Any failed critical check fails the call.
+
+</td>
+</tr>
+</table>
+
+Then it shows everything in a dashboard: pass rates per run, failures grouped by rubric item, full transcripts, and the view that makes the problem obvious: **what the caller said vs. what the agent heard.**
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/conversation.png" alt="Conversation view: what the caller said vs. what the agent heard, with rubric evidence" width="100%" />
+  <br />
+  <sub><b>The conversation view.</b> Struck-through red is what the caller said; green is what the agent heard instead. Here "Tuesday?" arrived as "Two's day" and the agent guessed. Every failed check links to its turn.</sub>
+</p>
+
+<table>
+<tr>
+<td width="50%">
+<img src="docs/dashboard.png" alt="Dashboard with pass rate per run, v1 vs v2" />
+<p align="center"><sub><b>Dashboard.</b> v1 → v2 of the same agent: 75% → 100%.</sub></p>
+</td>
+<td width="50%">
+<img src="docs/run.png" alt="Run results table" />
+<p align="center"><sub><b>Run results.</b> Fills in live as each simulated call finishes.</sub></p>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/suite.png" alt="Suite with generated personas and rubric" />
+<p align="center"><sub><b>Suites.</b> Generated callers with goals, behaviors, hidden facts and noise levels.</sub></p>
+</td>
+<td width="50%">
+<img src="docs/landing.png" alt="Landing page" />
+<p align="center"><sub><b>Landing page.</b></sub></p>
+</td>
+</tr>
+</table>
+
+## Try the demo
+
+Open **[gauntlet-blush.vercel.app](https://gauntlet-blush.vercel.app)** and sign in with `demo@gauntlet.ai` / `demo1234`.
+
+The demo account contains a real story, generated by the actual engine:
+
+| | Sunrise Family Clinic Receptionist **v1** | Sunrise Family Clinic Receptionist **v2** |
+|---|---|---|
+| **Prompt** | A realistic first draft: *"Callers are busy, so be efficient: don't make them confirm things twice."* and *"If the date of birth doesn't match, use your judgement."* | Drops the shortcut. Spells out how to handle a DOB mismatch, and reads back every date, time and number. |
+| **Pass rate** | **75%** and **75%** | **100%** and **88%** |
+| **Typical failure** | Books appointments without reading them back. Accepts a misheard birth year. Guesses when the transcript is garbled. | One caller got stuck in a repetition loop. It isn't perfect, and Gauntlet says so. |
+
+Click **New run** to watch eight callers phone the agent live. A demo account can start 5 runs per day.
+
+## How it works
 
 ```mermaid
 flowchart LR
@@ -43,83 +163,114 @@ flowchart LR
     Simulation -.-> Phase2
 ```
 
-**How a run executes.** `POST /api/runs` snapshots the agent (so later edits never change old results) and creates one pending conversation per persona. The browser then calls `POST /api/conversations/:id/execute` for each one, three at a time, and polls `GET /api/runs/:id`. One HTTP request simulates and judges exactly one call, which keeps every request well inside serverless time limits. Turns are saved as they happen, so the table fills in live and a failure mid-call still leaves a partial transcript.
+<details>
+<summary><b>A run, step by step</b></summary>
 
-**The conversation loop** (`lib/sim/loop.ts`): the agent greets first, then the caller speaks, the noise injector corrupts the caller's words, and the agent replies to the corrupted version. This repeats until someone hangs up (`[END_CALL]`), the agent transfers (`[TRANSFER]`), or the turn limit is reached. The caller sees the agent's words as-is; the agent only ever sees `heardText`.
+<br />
 
-**STT noise** (`lib/sim/noise.ts`) is a pure function of `(text, level, rng)`:
-- word drops
-- number mishearing (14↔40, fifteen↔fifty, digit swaps in dates and phone numbers)
-- a ~60-entry homophone dictionary (Patel→pastel, appointment→a point meant)
-- truncation
-- fillers and stutters
-- `[inaudible]` spans
-- lowercasing and punctuation loss
+1. **`POST /api/runs`** snapshots the agent's prompt, model and temperature onto the run, so editing the agent later never rewrites history. It also creates one pending conversation per persona.
+2. The browser calls **`POST /api/conversations/:id/execute`** for each conversation, three at a time, and polls **`GET /api/runs/:id`** every 2s. One request simulates and judges exactly one call, which keeps every request well inside serverless time limits.
+3. **The loop** (`lib/sim/loop.ts`) runs until someone hangs up (`[END_CALL]`), the agent transfers (`[TRANSFER]`), or the turn limit is reached:
+   - the agent greets first
+   - the caller speaks
+   - the noise injector corrupts the caller's words
+   - the agent replies to the corrupted version
 
-The RNG is seeded per conversation from `hash(run.seed, conversation.id)`, so runs are reproducible.
+   The caller sees the agent's words as-is; **the agent only ever sees the noised `heardText`**.
+4. **Turns are saved as they happen.** The table fills in live, and a failure mid-call still leaves a partial transcript to debug.
+5. **The judge** runs the code checks and one LLM call that answers every rubric question with evidence. It then computes the verdict:
+   - any failed critical item fails the call
+   - otherwise the weighted score (critical 3, major 2, minor 1) must be at least 0.8
+6. Execution is **idempotent**. Duplicate requests are harmless, and failed calls have a **Retry** button.
 
-**The judge** (`lib/judge`):
-- **Code checks** (`ended_cleanly`, `no_repetition_loop`, `no_pii_echo_of_hidden_info`, `escalated_when_required`, `reasonable_length`) run deterministically.
-- **LLM rubric:** one call per conversation at temperature 0 answers every rubric question as yes/no with quoted evidence and a turn index. The judge sees both what the caller said and what the agent heard, and uses a different model family from the default agent to reduce self-grading bias.
-- **Verdict:** any failed critical item fails the call; otherwise the call passes if its weighted score (critical 3, major 2, minor 1) is at least 0.8.
+</details>
 
-**LLM client** (`lib/llm/client.ts`): any OpenAI-compatible provider.
-- a per-instance concurrency limit
-- exponential backoff with jitter on 429/5xx, honouring `retry-after`
-- an optional fallback provider and per-call fallback model
-- JSON replies validated with Zod, with one retry that includes the validation error
+<details>
+<summary><b>The engine, file by file</b></summary>
 
-## Stack
+<br />
 
-Next.js 16 (App Router) · TypeScript (strict) · Tailwind CSS 4 · shadcn/ui · Recharts · Drizzle ORM · Supabase Postgres · Auth.js v5 (credentials, JWT) · OpenAI SDK pointed at [Cerebras](https://cloud.cerebras.ai) · Zod · Vitest · Vercel.
+| File | What it does |
+|---|---|
+| `lib/sim/noise.ts` | Pure `applySttNoise(text, level, rng)`: word drops, number mishearing, homophones, truncation, fillers and stutters, `[inaudible]`, casing and punctuation loss. Unit-tested. |
+| `lib/rng.ts` | mulberry32 PRNG, seeded per conversation with `hash(run.seed, conversation.id)` |
+| `lib/sim/personas.ts` | Zod-validated persona generation, with a required mix of archetypes |
+| `lib/sim/caller.ts` / `agent.ts` | Prompt builders. Role mapping is mirrored: from the caller's side the agent is `user`, and vice versa. |
+| `lib/sim/loop.ts` | The conversation loop and its end conditions |
+| `lib/judge/codeChecks.ts` | `ended_cleanly`, `no_repetition_loop`, `no_pii_echo_of_hidden_info`, `escalated_when_required`, `reasonable_length` |
+| `lib/judge/llmJudge.ts` | One temperature-0 call per conversation. It sees both said and heard text, and returns evidence and turn indexes. |
+| `lib/llm/client.ts` | Works with any OpenAI-compatible provider. Concurrency limit, backoff with jitter, `retry-after`, fallback provider and fallback model. |
+| `lib/llm/json.ts` | JSON output validated with Zod, retried once with the validation error |
 
-All LLM work uses **open-weight models** (Qwen 3.8 27B and GPT-OSS 120B on Cerebras by default).
+</details>
 
-## Running locally
+## Tech stack
 
-Requirements: Node 22, pnpm 10, a Supabase project, and an API key for an OpenAI-compatible provider serving open models (Cerebras is free).
+| | |
+|---|---|
+| **App** | Next.js 16 (App Router) · TypeScript (strict) · Tailwind CSS 4 · shadcn/ui · Recharts |
+| **Data** | Supabase Postgres · Drizzle ORM · row-level security on every table |
+| **Auth** | Auth.js v5 (credentials + JWT) |
+| **LLMs** | Open-weight models only: Qwen 3.8 27B and GPT-OSS 120B via [Cerebras](https://cloud.cerebras.ai), through the OpenAI SDK |
+| **Quality** | Zod everywhere · Vitest · ESLint + Prettier |
+| **Hosting** | Vercel (Fluid compute) |
+
+## Run it locally
+
+**You'll need:** Node 22, pnpm 10, a free [Supabase](https://supabase.com) project, and an API key for any OpenAI-compatible provider serving open models ([Cerebras](https://cloud.cerebras.ai) is free).
 
 ```bash
+git clone https://github.com/hassanabbas16/gauntlet.git
+cd gauntlet
 pnpm install
-cp .env.example .env.local        # then fill it in (see below)
-git config core.hooksPath .githooks
-pnpm db:push                      # create tables
-pnpm seed                         # demo user, demo agents/suite, demo runs from the fixture
-pnpm dev                          # http://localhost:3000
+cp .env.example .env.local     # fill in the values below
+pnpm db:push                   # create the tables
+pnpm seed                      # demo user, demo agents/suite, and the demo runs
+pnpm dev                       # → http://localhost:3000
 ```
-
-Other scripts:
 
 | Command | What it does |
 |---|---|
-| `pnpm test` | Vitest: STT noise is identity at level 0, deterministic per seed, and noisier at higher levels |
-| `pnpm try-one [personaIndex] [seed]` | Runs one demo caller against the v1 agent and prints the transcript (said vs. heard) and the judge's verdict |
-| `pnpm tsx scripts/generate-demo-run.ts` | Re-generates `scripts/fixtures/demo-run.json` by running the real engine |
-| `pnpm build` / `pnpm lint` / `pnpm typecheck` | The usual |
+| `pnpm test` | Noise tests: identity at level 0, deterministic per seed, noisier at higher levels |
+| `pnpm try-one [persona 0-7] [seed] [v1\|v2]` | One demo caller vs. one agent, printed to your terminal (said vs. heard, plus the verdict) |
+| `pnpm tsx scripts/generate-demo-run.ts` | Re-generates the demo runs by running the real engine |
+| `pnpm build` · `pnpm lint` · `pnpm typecheck` | The usual |
 
-## Environment variables
+<details>
+<summary><b>Environment variables</b></summary>
+
+<br />
 
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | Supabase **transaction pooler** URI (port 6543), used at runtime |
 | `DATABASE_URL_DIRECT` | Supabase **session pooler** URI (port 5432), used by drizzle-kit |
-| `LLM_BASE_URL` / `LLM_API_KEY` | Primary OpenAI-compatible provider (default `https://api.cerebras.ai/v1`) |
-| `LLM_FALLBACK_BASE_URL` / `LLM_FALLBACK_API_KEY` | Optional second provider, tried after retries are exhausted |
-| `LLM_FALLBACK_MODEL_MAP` | Optional `primary=fallback,...` model-ID mapping for the fallback provider |
+| `LLM_BASE_URL` · `LLM_API_KEY` | Primary OpenAI-compatible provider (default `https://api.cerebras.ai/v1`) |
+| `LLM_FALLBACK_BASE_URL` · `LLM_FALLBACK_API_KEY` | Optional second provider |
+| `LLM_FALLBACK_MODEL_MAP` | Optional `primary=fallback,…` model-ID mapping |
 | `AUTH_SECRET` | Auth.js secret (`npx auth secret`) |
-| `AUTH_URL` | Production URL (prod only) |
-| `DEMO_EMAIL` / `DEMO_PASSWORD` | Demo account created by `pnpm seed` |
-| `MODEL_CALLER` / `MODEL_AGENT_DEFAULT` / `MODEL_JUDGE` / `MODEL_PERSONA_GEN` | Model IDs for each role |
+| `AUTH_URL` | Production URL (production only) |
+| `DEMO_EMAIL` · `DEMO_PASSWORD` | The demo account `pnpm seed` creates |
+| `MODEL_CALLER` · `MODEL_AGENT_DEFAULT` · `MODEL_JUDGE` · `MODEL_PERSONA_GEN` | Model IDs for each role |
 | `DEMO_MAX_RUNS_PER_DAY` | New runs per day for demo accounts (default 5) |
-| `MAX_PERSONAS_PER_RUN` / `MAX_TURNS_PER_CONVERSATION` / `LLM_CONCURRENCY` | Engine limits |
+| `MAX_PERSONAS_PER_RUN` · `MAX_TURNS_PER_CONVERSATION` · `LLM_CONCURRENCY` | Engine limits |
 
-All tables have row-level security enabled with no policies, which blocks Supabase's auto-generated public Data API. The app connects as the `postgres` role, which bypasses RLS.
+</details>
 
 ## Roadmap
 
-- **Real audio (Phase 2):** synthesize the caller with Kokoro TTS, run it through faster-whisper, and connect agents over Pipecat, Vapi, Retell or SIP, so noise comes from real acoustics instead of simulation.
-- **Imports:** pull agent configs straight from Vapi and Retell.
-- **CI integration:** run a suite on every prompt change and fail the build when the pass rate drops.
-- **Judge majority voting:** several judge samples per call to reduce variance.
-- **Teams and orgs**, sign-up, and billing.
-- **Live updates over websockets** instead of polling.
+- [x] Text simulation with seeded STT noise
+- [x] Hybrid judge with quoted evidence
+- [x] Live runs, said-vs-heard diff, v1 → v2 comparison
+- [ ] **Real audio:** Kokoro TTS → faster-whisper → your agent over Pipecat, so noise comes from real acoustics
+- [ ] Connectors for Vapi, Retell and SIP, plus importing agent configs
+- [ ] CI integration: fail the build when a prompt change drops the pass rate
+- [ ] Judge majority voting to reduce variance
+- [ ] Teams, sign-up and billing
+- [ ] Live updates over websockets instead of polling
+
+<br />
+
+<div align="center">
+<sub>Built with open-weight models · Designed as a signal console: square corners, dot-matrix type, cyan for what the agent heard.</sub>
+</div>
