@@ -32,3 +32,10 @@ Running log of decisions and things to know.
   - semantic tokens `said` (rose), `heard` (cyan), `pass`, `fail`, `warn` for the transcript diff and verdicts
 - Fonts are Geist / Geist Mono / Doto, all open-license. The outreach console's Nimbus Sans L and KH Interference weren't copied: KH Interference's license is unclear for a public repo.
 - karing-voice-ops has no UI. It's ops/backend for production voice agents, so only its domain lessons inform the engine: spelled names and DOBs are the top transcription failures for identity checks, transfers matter, and callers get frustrated. No client names or data.
+
+## LLM provider: Cerebras instead of Groq (2026-10-04)
+
+- Groq sign-up didn't work for the user, so the primary provider is **Cerebras** (free tier, ~1M tokens/day, 30 RPM, open models). OpenRouter is dropped.
+- Env vars are provider-neutral: `LLM_BASE_URL` / `LLM_API_KEY`, plus optional `LLM_FALLBACK_BASE_URL` / `LLM_FALLBACK_API_KEY` (e.g. NVIDIA build.nvidia.com). Any OpenAI-compatible provider can be dropped in through env alone.
+- `DEMO_MAX_RUNS_PER_DAY` lowered from 5 to 2 to fit the 1M tokens/day cap (one call ≈ 32K tokens, so a run of 8 calls ≈ 260K).
+- `MODEL_*` IDs are placeholders until verified against Cerebras' `/models` list.
