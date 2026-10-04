@@ -1,0 +1,25 @@
+flowchart LR
+    U[User / Dev] -->|agents, suites, rubric| UI[Next.js Dashboard]
+    UI --> API[Next.js API Routes]
+    API --> DB[(Supabase Postgres<br/>runs, turns, scores)]
+    API --> PG[Persona Generator<br/>GPT-OSS 120B]
+    API --> LOOP[Conversation Loop]
+
+    subgraph Simulation [Per-conversation execution]
+        CALLER[Synthetic Caller<br/>Qwen 3.8 27B] -->|raw text| NOISE[STT Noise Injector<br/>seeded, deterministic]
+        NOISE -->|heard text| AUT[Agent Under Test<br/>any open model]
+        AUT -->|reply| CALLER
+    end
+
+    LOOP --> Simulation
+    Simulation --> JUDGE[Hybrid Judge]
+    JUDGE --> CC[Code Checks]
+    JUDGE --> LJ[LLM Rubric Judge<br/>GPT-OSS 120B]
+    CC --> DB
+    LJ --> DB
+    DB --> UI
+
+    subgraph Phase2 [Phase 2: Real audio]
+        P2[Pipecat + faster-whisper + Kokoro TTS<br/>Vapi / Retell / SIP connectors]
+    end
+    Simulation -.-> Phase2

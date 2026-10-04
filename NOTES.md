@@ -19,7 +19,7 @@ All seven phases are built. Production: see "Deploy" below for the URL and how i
 - Status/enum columns are Postgres enums. `conversations` has an extra `createdAt`; `endReason`/`verdict`/`score`/`summary` are nullable until a conversation finishes.
 - `rubric_items.config` (jsonb, nullable) was added beyond the spec: `escalated_when_required` needs its "should escalate" archetype list stored on the rubric item ("configurable on rubric item" in the spec).
 - **Auth**: Auth.js v5 beta, Credentials + JWT. `session.user.id` and `session.user.isDemo` come from the token.
-- Commit messages are plain conventional commits. This repo's local git config pins user.name/email to the personal account.
+- This repo's local git config pins user.name/email to the personal account.
 - Scripts load `.env.local` through `scripts/env.ts` (import it first).
 
 ## Database: Supabase instead of Neon (user decision, 2026-10-02)
