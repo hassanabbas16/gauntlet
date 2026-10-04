@@ -85,7 +85,7 @@ export function NewRunForm({ agents, suites, defaultAgentId, defaultSuiteId, lim
           <SelectContent>
             {agents.map((a) => (
               <SelectItem key={a.id} value={a.id}>
-                {a.name} <span className="font-mono text-xs text-muted-foreground">· {a.model}</span>
+                {a.name} <span className="hidden font-mono text-xs text-muted-foreground sm:inline">· {a.model}</span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -102,7 +102,7 @@ export function NewRunForm({ agents, suites, defaultAgentId, defaultSuiteId, lim
           <SelectContent>
             {suites.map((s) => (
               <SelectItem key={s.id} value={s.id}>
-                {s.name} <span className="font-mono text-xs text-muted-foreground">· {s.personaCount} personas</span>
+                {s.name} <span className="hidden font-mono text-xs text-muted-foreground sm:inline">· {s.personaCount} personas</span>
               </SelectItem>
             ))}
           </SelectContent>

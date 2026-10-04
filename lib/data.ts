@@ -134,3 +134,39 @@ export async function listRuns(userId: string, limit = 100) {
     };
   });
 }
+
+/** Totals and the most-failed rubric item across all of a user's runs. */
+export async function dashboardStats(userId: string) {
+  const runList = await listRuns(userId, 200);
+  const runIds = runList.map((r) => r.id);
+  const completed = runList.reduce((n, r) => n + r.completed, 0);
+  const passed = runList.reduce((n, r) => n + r.passed, 0);
+
+  let mostFailed: { key: string; count: number; severity: string } | null = null;
+  if (runIds.length) {
+    const [row] = await db
+      .select({ key: rubricItems.key, severity: rubricItems.severity, n: sql<number>`count(*)::int` })
+      .from(schema.scores)
+      .innerJoin(conversations, eq(schema.scores.conversationId, conversations.id))
+      .innerJoin(rubricItems, eq(schema.scores.rubricItemId, rubricItems.id))
+      .where(and(inArray(conversations.runId, runIds), eq(schema.scores.passed, false)))
+      .groupBy(rubricItems.key, rubricItems.severity)
+      .orderBy(desc(sql`count(*)`))
+      .limit(1);
+    if (row) mostFailed = { key: row.key, count: row.n, severity: row.severity };
+  }
+
+  // Agents in creation order, so each keeps the same chart colour.
+  const agentOrder = (
+    await db.select({ id: agents.id }).from(agents).where(eq(agents.userId, userId)).orderBy(asc(agents.createdAt))
+  ).map((a) => a.id);
+
+  return {
+    runs: runList,
+    totalRuns: runList.length,
+    conversations: completed,
+    passRate: completed ? passed / completed : null,
+    mostFailed,
+    agentOrder,
+  };
+}
