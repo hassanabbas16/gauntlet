@@ -38,4 +38,4 @@ Running log of decisions and things to know.
 - Groq sign-up didn't work for the user, so the primary provider is **Cerebras** (free tier, ~1M tokens/day, 30 RPM, open models). OpenRouter is dropped.
 - Env vars are provider-neutral: `LLM_BASE_URL` / `LLM_API_KEY`, plus optional `LLM_FALLBACK_BASE_URL` / `LLM_FALLBACK_API_KEY` (e.g. NVIDIA build.nvidia.com). Any OpenAI-compatible provider can be dropped in through env alone.
 - `DEMO_MAX_RUNS_PER_DAY` lowered from 5 to 2 to fit the 1M tokens/day cap (one call ≈ 32K tokens, so a run of 8 calls ≈ 260K).
-- `MODEL_*` IDs are placeholders until verified against Cerebras' `/models` list.
+- Cerebras only serves two models on this account (checked via `/models`, 2026-10-04): `qwen-3.8-27b` and `gpt-oss-120b`, with no Llama. Caller, persona gen and judge use `gpt-oss-120b`; the default agent under test uses `qwen-3.8-27b`, so the judge is a different family from the default agent. Both are open-weight. Both emit reasoning tokens (~50-80 per short reply), which count against the daily cap. The landing footer and README diagram must say "Qwen, GPT-OSS" instead of "Llama, Qwen" (Phase 5/6).
