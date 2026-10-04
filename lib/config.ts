@@ -17,9 +17,9 @@ export const config = {
   },
   get limits() {
     return {
-      demoMaxRunsPerDay: num("DEMO_MAX_RUNS_PER_DAY", 2),
+      demoMaxRunsPerDay: num("DEMO_MAX_RUNS_PER_DAY", 5),
       maxPersonasPerRun: num("MAX_PERSONAS_PER_RUN", 10),
-      maxTurnsPerConversation: num("MAX_TURNS_PER_CONVERSATION", 16),
+      maxTurnsPerConversation: num("MAX_TURNS_PER_CONVERSATION", 20),
       llmConcurrency: num("LLM_CONCURRENCY", 3),
     };
   },
