@@ -12,11 +12,12 @@ import { createRng, hashSeed } from "@/lib/rng";
 import { runConversation } from "@/lib/sim/loop";
 
 const OUT = "scripts/fixtures/demo-run.json";
+// Seeded runs sit on earlier days so they never count against today's demo run limit.
 const RUNS: { agent: "v1" | "v2"; seed: number; minutesAgo: number }[] = [
-  { agent: "v1", seed: 1101, minutesAgo: 2 * 24 * 60 + 35 },
-  { agent: "v1", seed: 1202, minutesAgo: 26 * 60 + 10 },
-  { agent: "v2", seed: 2101, minutesAgo: 5 * 60 + 20 },
-  { agent: "v2", seed: 2202, minutesAgo: 48 },
+  { agent: "v1", seed: 1101, minutesAgo: 3 * 24 * 60 + 35 },
+  { agent: "v1", seed: 1202, minutesAgo: 2 * 24 * 60 + 10 },
+  { agent: "v2", seed: 2101, minutesAgo: 30 * 60 },
+  { agent: "v2", seed: 2202, minutesAgo: 25 * 60 + 20 },
 ];
 // gpt-oss (the judge) allows ~5 requests/minute on this account, so judge calls are spaced out.
 const JUDGE_SPACING_MS = 13_000;
