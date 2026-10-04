@@ -69,6 +69,8 @@ export const rubricItems = pgTable("rubric_items", {
   severity: severityEnum("severity").notNull(),
   kind: rubricKindEnum("kind").notNull(),
   codeCheck: text("code_check"),
+  // Optional settings for a code check, e.g. { archetypes: ["hostile"] } for escalated_when_required.
+  config: jsonb("config").$type<Record<string, unknown>>(),
   order: integer("order").notNull().default(0),
   createdAt: createdAt(),
 }).enableRLS();
