@@ -74,7 +74,7 @@ All seven phases are built. Production: see "Deploy" below for the URL and how i
 
 ## Deploy
 
-- **GitHub:** https://github.com/hassanabbas16/gauntlet (public). Pushed with the personal account (`hassanabbas16`). The GitHub CLI's active account was switched back to `hassann-karing` afterwards; this repo's `origin` URL includes the `hassanabbas16@` username so pushes use the personal token.
+- **GitHub:** https://github.com/hassanabbas16/gauntlet (public). Pushed with the personal account (`hassanabbas16`). The GitHub CLI's active account stays `hassann-karing`. This repo's local git config has a credential helper for github.com that returns `gh auth token --user hassanabbas16`, so `git push` here always uses the personal account and nothing else is affected.
 - **Vercel:** project `gauntlet` under the personal Vercel account (`hassanabbas16`), linked with `vercel link`. Env vars were uploaded with the CLI from `.env.local` (production): `DATABASE_URL`, `LLM_BASE_URL`, `LLM_API_KEY`, `AUTH_SECRET` (these four as sensitive), `DEMO_*`, `MODEL_*` and the limits. `AUTH_URL` is set to the production URL.
 - The DB is shared between local and production (one Supabase project), so `pnpm db:push` and `pnpm seed` from this machine update production too.
 - Redeploy: `vercel deploy --prod` (until the GitHub app is installed, see follow-ups).
