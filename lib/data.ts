@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { personaSchema, type Persona } from "@/lib/sim/personas";
 
@@ -87,4 +87,50 @@ export async function countConversations(runIds: string[]) {
     .from(conversations)
     .where(inArray(conversations.runId, runIds));
   return row?.n ?? 0;
+}
+
+export type RunListItem = Awaited<ReturnType<typeof listRuns>>[number];
+
+/** Runs newest first, with conversation pass/fail counts. */
+export async function listRuns(userId: string, limit = 100) {
+  const rows = await db
+    .select({ run: runs, suiteName: suites.name })
+    .from(runs)
+    .innerJoin(suites, eq(runs.suiteId, suites.id))
+    .where(eq(runs.userId, userId))
+    .orderBy(desc(runs.createdAt))
+    .limit(limit);
+  if (rows.length === 0) return [];
+
+  const stats = await db
+    .select({
+      runId: conversations.runId,
+      total: count(),
+      completed: sql<number>`count(*) filter (where ${conversations.status} = 'completed')::int`,
+      passed: sql<number>`count(*) filter (where ${conversations.verdict} = 'pass')::int`,
+      errored: sql<number>`count(*) filter (where ${conversations.status} = 'failed')::int`,
+    })
+    .from(conversations)
+    .where(inArray(conversations.runId, rows.map((r) => r.run.id)))
+    .groupBy(conversations.runId);
+  const byRun = new Map(stats.map((s) => [s.runId, s]));
+
+  return rows.map(({ run, suiteName }) => {
+    const s = byRun.get(run.id);
+    const completed = s?.completed ?? 0;
+    return {
+      id: run.id,
+      status: run.status,
+      createdAt: run.createdAt,
+      agentId: run.agentId,
+      agentName: run.agentSnapshot.name,
+      model: run.agentSnapshot.model,
+      suiteName,
+      total: s?.total ?? 0,
+      completed,
+      passed: s?.passed ?? 0,
+      errored: s?.errored ?? 0,
+      passRate: completed ? (s?.passed ?? 0) / completed : null,
+    };
+  });
 }

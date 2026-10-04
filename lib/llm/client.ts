@@ -30,6 +30,8 @@ export class LlmError extends Error {
     message: string,
     readonly status?: number,
     readonly provider?: string,
+    /** True for transient problems worth retrying (e.g. an empty completion). */
+    readonly retryable = false,
   ) {
     super(message);
     this.name = "LlmError";
@@ -104,6 +106,7 @@ const MAX_RETRIES = 3;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function isRetryable(err: unknown): boolean {
+  if (err instanceof LlmError) return err.retryable;
   if (err instanceof OpenAI.APIConnectionError) return true;
   if (err instanceof OpenAI.APIError) {
     return err.status === 429 || (err.status !== undefined && err.status >= 500);
@@ -157,6 +160,7 @@ async function callProvider(provider: Provider, opts: ChatOptions): Promise<Chat
       `Empty response from ${model} (finish_reason=${choice?.finish_reason ?? "unknown"})`,
       undefined,
       provider.name,
+      true,
     );
   }
   return { text, provider: provider.name, model, latencyMs, usage };
