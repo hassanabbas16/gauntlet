@@ -40,7 +40,8 @@ async function main() {
   const fixture: DemoFixture | null = existsSync(FIXTURE_PATH)
     ? (JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as DemoFixture)
     : null;
-  const agentModel = fixture?.models.agent ?? config.models.agentDefault;
+  // Agents use the currently configured model; historical run snapshots keep the fixture's model.
+  const agentModel = config.models.agentDefault;
 
   const now = Date.now();
   const [v1, v2] = await db
@@ -106,7 +107,7 @@ async function main() {
         agentId: agent.id,
         suiteId: suite.id,
         status: "completed",
-        agentSnapshot: { name: prompt.name, systemPrompt: prompt.systemPrompt, model: agentModel, temperature: 0.3 },
+        agentSnapshot: { name: prompt.name, systemPrompt: prompt.systemPrompt, model: fixture.models.agent, temperature: 0.3 },
         seed: fr.seed,
         createdAt,
         completedAt: new Date(createdAt.getTime() + 3 * 60_000),

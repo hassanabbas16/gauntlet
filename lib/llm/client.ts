@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import pLimit from "p-limit";
 import { config } from "@/lib/config";
@@ -38,7 +39,13 @@ export class LlmError extends Error {
   }
 }
 
-type Provider = { name: string; client: OpenAI; modelMap: Record<string, string> };
+type Provider = {
+  name: string;
+  client: OpenAI;
+  /** Set when the provider is Anthropic; Claude goes through the Messages API instead. */
+  anthropic?: Anthropic;
+  modelMap: Record<string, string>;
+};
 
 let providers: Provider[] | null = null;
 
@@ -68,9 +75,11 @@ function getProviders(): Provider[] {
     throw new LlmError("LLM_BASE_URL and LLM_API_KEY must be set");
   }
   // maxRetries: 0 because we do our own backoff + fallback below.
+  const isAnthropic = LLM_API_KEY.startsWith("sk-ant-") || hostName(LLM_BASE_URL) === "api.anthropic.com";
   list.push({
-    name: hostName(LLM_BASE_URL),
+    name: isAnthropic ? "api.anthropic.com" : hostName(LLM_BASE_URL),
     client: new OpenAI({ baseURL: LLM_BASE_URL, apiKey: LLM_API_KEY, maxRetries: 0, timeout: 45_000 }),
+    anthropic: isAnthropic ? new Anthropic({ apiKey: LLM_API_KEY, maxRetries: 0, timeout: 60_000 }) : undefined,
     modelMap: {},
   });
   if (LLM_FALLBACK_BASE_URL && LLM_FALLBACK_API_KEY) {
@@ -107,8 +116,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function isRetryable(err: unknown): boolean {
   if (err instanceof LlmError) return err.retryable;
-  if (err instanceof OpenAI.APIConnectionError) return true;
-  if (err instanceof OpenAI.APIError) {
+  if (err instanceof OpenAI.APIConnectionError || err instanceof Anthropic.APIConnectionError) return true;
+  if (err instanceof OpenAI.APIError || err instanceof Anthropic.APIError) {
     return err.status === 429 || (err.status !== undefined && err.status >= 500);
   }
   return false;
@@ -119,11 +128,12 @@ function isRetryable(err: unknown): boolean {
  * per-minute windows, so back off in seconds (4s/8s/16s); other errors use 1s/2s/4s. Jittered.
  */
 function backoffMs(err: unknown, attempt: number): number {
-  if (err instanceof OpenAI.APIError && err.headers) {
+  if ((err instanceof OpenAI.APIError || err instanceof Anthropic.APIError) && err.headers) {
     const retryAfter = Number(err.headers.get("retry-after"));
     if (Number.isFinite(retryAfter) && retryAfter > 0) return Math.min(retryAfter * 1000, 20_000);
   }
-  const base = err instanceof OpenAI.APIError && err.status === 429 ? 4000 : 1000;
+  const status = err instanceof OpenAI.APIError || err instanceof Anthropic.APIError ? err.status : undefined;
+  const base = status === 429 ? 4000 : 1000;
   return base * 2 ** attempt + Math.random() * 500;
 }
 
@@ -132,7 +142,40 @@ function cleanContent(text: string): string {
   return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 }
 
+/** Claude via the Messages API: system prompt goes top-level, JSON is requested in the prompt. */
+async function callAnthropic(provider: Provider, client: Anthropic, opts: ChatOptions): Promise<ChatResult> {
+  const model = provider.modelMap[opts.model] ?? opts.model;
+  const system = opts.messages
+    .filter((m) => m.role === "system")
+    .map((m) => m.content)
+    .join("\n\n");
+  const messages: Anthropic.MessageParam[] = opts.messages
+    .filter((m) => m.role !== "system")
+    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+  // The Messages API needs the conversation to start with a user turn.
+  if (messages[0]?.role !== "user") messages.unshift({ role: "user", content: "(call connected)" });
+  const started = Date.now();
+  const res = await client.messages.create({
+    model,
+    max_tokens: Math.max(opts.maxTokens ?? 1024, 1024),
+    system: opts.json ? `${system}\n\nRespond with a single JSON object only, no prose or code fences.` : system,
+    messages,
+  });
+  const latencyMs = Date.now() - started;
+  const text = cleanContent(
+    res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(""),
+  );
+  const usage = { prompt: res.usage.input_tokens, completion: res.usage.output_tokens };
+  console.log(`[llm] ${provider.name} ${model} ${latencyMs}ms in=${usage.prompt} out=${usage.completion}` +
+    (res.stop_reason && res.stop_reason !== "end_turn" ? ` stop=${res.stop_reason}` : ""));
+  if (!text) {
+    throw new LlmError(`Empty response from ${model} (stop_reason=${res.stop_reason})`, undefined, provider.name, res.stop_reason !== "refusal");
+  }
+  return { text, provider: provider.name, model, latencyMs, usage };
+}
+
 async function callProvider(provider: Provider, opts: ChatOptions): Promise<ChatResult> {
+  if (provider.anthropic) return callAnthropic(provider, provider.anthropic, opts);
   const model = provider.modelMap[opts.model] ?? opts.model;
   const effort = opts.reasoningEffort ?? defaultReasoningEffort(model);
   const started = Date.now();
@@ -191,11 +234,11 @@ export async function chat(opts: ChatOptions): Promise<ChatResult> {
     }
   }
   if (lastErr instanceof LlmError) throw lastErr;
-  const status = lastErr instanceof OpenAI.APIError ? lastErr.status : undefined;
+  const status = lastErr instanceof OpenAI.APIError || lastErr instanceof Anthropic.APIError ? lastErr.status : undefined;
   throw new LlmError(`LLM request failed: ${describe(lastErr)}`, status);
 }
 
 function describe(err: unknown): string {
-  if (err instanceof OpenAI.APIError) return `${err.status ?? "network"} ${err.message}`;
+  if (err instanceof OpenAI.APIError || err instanceof Anthropic.APIError) return `${err.status ?? "network"} ${err.message}`;
   return err instanceof Error ? err.message : String(err);
 }
